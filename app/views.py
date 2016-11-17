@@ -4,6 +4,19 @@ import pykovtext
 
 app.config.update(SECRET_KEY='swag')
 
+def generateFiction():
+	# send text file for text generation, currently only HP
+	file = open("hp.txt")
+	# generate text via pykovtext module
+	textgen = pykovtext.Pykvtxt(file)
+
+	text = ''
+	while len(text) < 250:
+		tempText = textgen.printText(250)
+		text = text + tempText + ' '
+
+	return text
+
 # Generate and display fan fiction method
 @app.route('/generate')
 def generate():
@@ -11,12 +24,9 @@ def generate():
 	fict1 = session.get('fict1', None)
 	fict2 = session.get('fict2', None)
 
-	# send text file for text generation, currently only HP
-	file = open("hp.txt")
-	# generate text via pykovtext module
-	textgen = pykovtext.Pykvtxt(file)
 	# send it all to the web page to be displayed
-	return render_template('generate.html', title='Fancfiction Generator',fic1=fict1, fic2=fict2, gText=textgen.printText(250))
+	fanFic = generateFiction()
+	return render_template('generate.html', title='Fancfiction Generator',fic1=fict1, fic2=fict2, gText=fanFic)
 
 # Main page method
 @app.route('/')
