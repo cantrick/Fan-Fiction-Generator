@@ -35,7 +35,8 @@ class Pykvtxt(object):
                 self.cache[key] = [w4]
 
     def printText(self, size=200):
-        
+        # var to check if we're in between a quotation ""
+        inQuote = False
 
         # Number of sentences to generate, and count for later loop
 
@@ -49,14 +50,56 @@ class Pykvtxt(object):
             seed], self.words[seed + 1], self.words[seed + 2]
         w1, w2, w3 = seed_word, next_word, next_next_word
         gen_words = []
+        if w2.startswith("\""):
+            inQuote = True
+            print(w1, "~~", w2, "~~", w3, "~~")
+            
+        
 
             
         for i in range(size):
-            gen_words.append(w2)
-            w1, w2, w3 = w2, w3, random.choice(self.cache[(w1, w2, w3)])
-            if w3.endswith(('.','!','?')):
-                print("OK, ", w1, w2, w3)
-                break
+            print("INQ ", inQuote)
+            # Generate words for the quote until the quote is finished
+            if inQuote:
+                gen_words.append(w2)
+                w1, w2, w3 = w2, w3, random.choice(self.cache[(w1, w2, w3)])
+
+                # If you're already in a quote, don't generate the start of another one
+                while w2.startswith("\""):
+                    w3 = random.choice(self.cache[(w1, w2, w3)])
+                    w2 = random.choice(self.cache[(w1, w2, w3)])
+                    w1 = random.choice(self.cache[(w1, w2, w3)])
+                    print("TRYAGQUO")
+
+                # If there is an end quote mark while in a quote, end that quote
+                if w2.strip().endswith("\""):
+                    inQuote = False
+                    print(w1, '##', w2, '##', w3)
+                    gen_words.append(w2)
+                    
+            else:
+                # If there is an end quote mark while not in a quote, generate new words
+                while w2.strip().endswith("\"") and not inQuote:
+                    print("TRYAGAIN ",w1, '@@', w2, '@@',w3)
+                    w1, w2, w3 = w2, w3, random.choice(self.cache[(w1, w2, w3)])
+                    print("TRYAGAIN2 ",w1, '@@', w2, '@@',w3)
+
+                gen_words.append(w2)
+                w1, w2, w3 = w2, w3, random.choice(self.cache[(w1, w2, w3)])
+
+                
+
+                # If there is a starting quote mark while not in a quote, start a quote
+                if w2.startswith("\""):
+                    inQuote = True
+                    print(w1, "&&", w2, "&&", w3)
+
+                # If there is an end of a sentence, start a new sentence
+                if w3.strip().endswith(('.','!','?')):
+                    print("FUCKOUTTAHERE ",w3)
+                    break
+
+
         gen_words.append(w2)    
         gen_words.append(w3)
 
