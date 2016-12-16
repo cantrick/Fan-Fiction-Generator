@@ -1,18 +1,33 @@
 # Python markov chain text generator
 
 import random
-
+import pickle
+import os
+import string
 
 class Pykvtxt(object):
 
-    def __init__(self, open_file):
+    def __init__(self, open_file, cache_name):
         self.cache = {}
+        self.cache_file = cache_name + ".pkl"
         self.open_file = open_file
         self.words = self.parse_file()
         self.text_size = len(self.words)
         self.database()
 
     def parse_file(self):
+        # load in saved data from file
+        # get path of .pkl files
+        script_dir = os.path.dirname(__file__)
+        rel_path = "pkl/" + self.cache_file
+        abs_file_path = os.path.join(script_dir, rel_path)
+
+        with open(abs_file_path,'rb') as f:
+            # These 2 lines are only needed once to initially add to files
+            #s = f.read()
+            #if s:
+            self.cache = pickle.load(f)
+
         self.open_file.seek(0)
         data = self.open_file.read()
         words = data.split()
@@ -34,6 +49,17 @@ class Pykvtxt(object):
             else:
                 self.cache[key] = [w4]
 
+        # save to file
+        script_dir = os.path.dirname(__file__)
+        rel_path = "pkl/" + self.cache_file
+        abs_file_path = os.path.join(script_dir, rel_path)
+
+        with open(abs_file_path,'wb') as f:
+            pickle.dump(self.cache, f, pickle.HIGHEST_PROTOCOL)
+            
+
+
+
     def printText(self, size=200):
         # var to check if we're in between a quotation ""
         inQuote = False
@@ -45,6 +71,8 @@ class Pykvtxt(object):
         # Start sentence with a capital word so it looks like a real sentence
         while(self.words[seed + 1][0].islower()):
             seed = random.randint(0, self.text_size - 4)
+            if '.' in self.words[seed + 1]:
+                seed = random.randint(0, self.text_size - 4)
 
         seed_word, next_word, next_next_word = self.words[
             seed], self.words[seed + 1], self.words[seed + 2]
@@ -52,13 +80,9 @@ class Pykvtxt(object):
         gen_words = []
         if w2.startswith("\""):
             inQuote = True
-            print(w1, "~~", w2, "~~", w3, "~~")
-            
-        
 
             
         for i in range(size):
-            print("INQ ", inQuote)
             # Generate words for the quote until the quote is finished
             if inQuote:
                 gen_words.append(w2)
@@ -66,23 +90,17 @@ class Pykvtxt(object):
 
                 # If you're already in a quote, don't generate the start of another one
                 while w2.startswith("\""):
-                    w3 = random.choice(self.cache[(w1, w2, w3)])
-                    w2 = random.choice(self.cache[(w1, w2, w3)])
-                    w1 = random.choice(self.cache[(w1, w2, w3)])
-                    print("TRYAGQUO")
+                    w1,w2,w3 = w2, w3, random.choice(self.cache[(w1, w2, w3)])
 
                 # If there is an end quote mark while in a quote, end that quote
                 if w2.strip().endswith("\""):
                     inQuote = False
-                    print(w1, '##', w2, '##', w3)
                     gen_words.append(w2)
                     
             else:
                 # If there is an end quote mark while not in a quote, generate new words
                 while w2.strip().endswith("\"") and not inQuote:
-                    print("TRYAGAIN ",w1, '@@', w2, '@@',w3)
                     w1, w2, w3 = w2, w3, random.choice(self.cache[(w1, w2, w3)])
-                    print("TRYAGAIN2 ",w1, '@@', w2, '@@',w3)
 
                 gen_words.append(w2)
                 w1, w2, w3 = w2, w3, random.choice(self.cache[(w1, w2, w3)])
@@ -92,11 +110,9 @@ class Pykvtxt(object):
                 # If there is a starting quote mark while not in a quote, start a quote
                 if w2.startswith("\""):
                     inQuote = True
-                    print(w1, "&&", w2, "&&", w3)
 
                 # If there is an end of a sentence, start a new sentence
                 if w3.strip().endswith(('.','!','?')):
-                    print("FUCKOUTTAHERE ",w3)
                     break
 
 
